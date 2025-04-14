@@ -491,7 +491,7 @@ with tab1:
     with st.expander('Imagenes en carpera: "Imagenes_menu"', expanded=False):
       fig_tab1 = mostrar_grilla_imagenes(
         dic_imgs = st.session_state['imgs'],
-        fsize = 2.5 
+        fsize = 1.5 
         )
       st.pyplot(fig_tab1)
   
