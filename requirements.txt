@@ -4,3 +4,4 @@ streamlit==1.39.0
 matplotlib==3.7.2
 plotly==5.6.0
 Pillow==9.5.0
+pytz==2021.3
