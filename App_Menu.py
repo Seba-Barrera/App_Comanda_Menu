@@ -17,6 +17,7 @@ import numpy as np
 
 import math
 from datetime import datetime
+import pytz
 
 
 # para tratamiento de archivos
@@ -31,6 +32,11 @@ import streamlit as st
 
 import warnings
 warnings.filterwarnings('ignore')
+
+
+
+
+
 
 
 
@@ -73,11 +79,20 @@ def mostrar_grilla_imagenes(
   return fig
 
 
+#=======================================================================
+# [B.2] Funcion de Obtener hora de ahora con horario santiago de chile
+#=======================================================================
 
+
+def ahora():
+  santiago_tz = pytz.timezone('America/Santiago')
+  ahora_naive = datetime.now() # Obtiene la hora local del servidor (puede ser UTC)
+  ahora_santiago = santiago_tz.localize(ahora_naive)
+  return ahora_santiago.strftime('%Y-%m-%d %H:%M:%S')
 
 
 #=======================================================================
-# [B.2] Entregables de analisis
+# [B.3] Entregables de analisis
 #=======================================================================
 
 
@@ -148,12 +163,12 @@ def analisis_menu(
   # Ver participacion por categoria (treemap)
 
   df_ventas3_pc = df_ventas3.groupby([
-      'Categoria',
-      'plato'
-      ]).agg( 
-        venta = pd.NamedAgg(column='venta', aggfunc = sum),
-        pedidos = pd.NamedAgg(column='pedidos', aggfunc = sum)
-        ).reset_index()
+    'Categoria',
+    'plato'
+    ]).agg( 
+      venta = pd.NamedAgg(column='venta', aggfunc = sum),
+      pedidos = pd.NamedAgg(column='pedidos', aggfunc = sum)
+      ).reset_index()
 
   df_ventas3_pc['plato'] = df_ventas3_pc['plato'].apply(
     lambda x: x.replace(' ','<br>')
@@ -174,13 +189,13 @@ def analisis_menu(
   # Ver participacion por dia de la semana
 
   df_ventas3_ds = df_ventas3.groupby([
-      'dia_semana',
-      'Categoria',
-      'plato'
-      ]).agg( 
-        venta = pd.NamedAgg(column='venta', aggfunc = sum),
-        pedidos = pd.NamedAgg(column='pedidos', aggfunc = sum)
-        ).reset_index()
+    'dia_semana',
+    'Categoria',
+    'plato'
+    ]).agg( 
+      venta = pd.NamedAgg(column='venta', aggfunc = sum),
+      pedidos = pd.NamedAgg(column='pedidos', aggfunc = sum)
+      ).reset_index()
   
   df_ventas3_ds['total_venta_dia'] = df_ventas3_ds.groupby('dia_semana')['venta'].transform('sum')
   df_ventas3_ds['peso'] = (df_ventas3_ds['venta'] / df_ventas3_ds['total_venta_dia']) * 100
@@ -208,13 +223,13 @@ def analisis_menu(
       
 
   df_ventas3_h = df_ventas3.groupby([
-      'hora',
-      'Categoria',
-      'plato'
-      ]).agg( 
-        venta = pd.NamedAgg(column='venta', aggfunc = sum),
-        pedidos = pd.NamedAgg(column='pedidos', aggfunc = sum)
-        ).reset_index()
+    'hora',
+    'Categoria',
+    'plato'
+    ]).agg( 
+      venta = pd.NamedAgg(column='venta', aggfunc = sum),
+      pedidos = pd.NamedAgg(column='pedidos', aggfunc = sum)
+      ).reset_index()
   
   df_ventas3_h['total_venta_hora'] = df_ventas3_h.groupby('hora')['venta'].transform('sum')
   df_ventas3_h['peso'] = (df_ventas3_h['venta'] / df_ventas3_h['total_venta_hora']) * 100
@@ -239,13 +254,13 @@ def analisis_menu(
   # Ver evolucion de ventas en el tiempo
 
   df_ventas3_t = df_ventas3.groupby([
-      'fecha',
-      'Categoria',
-      'plato'
-      ]).agg( 
-        venta = pd.NamedAgg(column='venta', aggfunc = sum),
-        pedidos = pd.NamedAgg(column='pedidos', aggfunc = sum)
-        ).reset_index()
+    'fecha',
+    'Categoria',
+    'plato'
+    ]).agg( 
+      venta = pd.NamedAgg(column='venta', aggfunc = sum),
+      pedidos = pd.NamedAgg(column='pedidos', aggfunc = sum)
+      ).reset_index()
 
   df_ventas3_t['fecha'] = pd.to_datetime(df_ventas3_t['fecha'], format='%d-%m-%Y')
 
@@ -269,11 +284,11 @@ def analisis_menu(
 
 
   df_ventas3_h = df_ventas3.groupby([
-      'hora cierre',
-      'mesa'
-      ]).agg( 
-        hora_llegada = pd.NamedAgg(column='hora_llegada', aggfunc = min)
-        ).reset_index()
+    'hora cierre',
+    'mesa'
+    ]).agg( 
+      hora_llegada = pd.NamedAgg(column='hora_llegada', aggfunc = min)
+      ).reset_index()
   
   df_ventas3_h['hora_llegada'] = pd.to_datetime(df_ventas3_h['hora_llegada'])
   df_ventas3_h['hora cierre'] = pd.to_datetime(df_ventas3_h['hora cierre'])
@@ -287,6 +302,29 @@ def analisis_menu(
     )
 
 
+
+  #________________________________________________
+  # Ver violin de hora de llegada por dia
+
+
+  df_ventas3_hll = df_ventas3.groupby([
+    'dia_semana',
+    'hora cierre',
+    'mesa'
+    ]).agg( 
+      hora = pd.NamedAgg(column='hora', aggfunc = min)
+      ).reset_index()
+
+
+  fig_hll = px.violin(
+    df_ventas3_hll, 
+    x='dia_semana',
+    y='hora',
+    title='Distribucion segun hora de llegada y dia',
+    category_orders={
+      'dia_semana': ['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado','Domingo']
+      }
+    )
 
   #________________________________________________
   # Ver evolucion de consumo de ingredientes 
@@ -334,7 +372,7 @@ def analisis_menu(
   #________________________________________________
   # Generar entregables
   
-  return fig_pc,fig_ds,fig_h,fig_t,fig_hist,df_ventas3_i2
+  return fig_pc,fig_ds,fig_h,fig_t,fig_hist,fig_hll,df_ventas3_i2
   
 
 
@@ -491,7 +529,7 @@ with tab1:
     with st.expander('Imagenes en carpera: "Imagenes_menu"', expanded=False):
       fig_tab1 = mostrar_grilla_imagenes(
         dic_imgs = st.session_state['imgs'],
-        fsize = 1.5 
+        fsize = 2.5 
         )
       st.pyplot(fig_tab1)
   
@@ -618,7 +656,7 @@ with tab2:
     if boton_ingresar_pedido:
       
       df_insertar = st.session_state['dfp'].copy()
-      df_insertar['hora pedido'] = (datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
+      df_insertar['hora pedido'] = ahora()
       df_insertar['mesa'] = mesa
       df_insertar['estado'] = 'abierta'     
       df_insertar['hora cierre'] = ''  
@@ -683,7 +721,7 @@ with tab3:
       (st.session_state['dft']['estado']=='abierta') & 
       (st.session_state['dft']['mesa']==mesa_cuenta), 
       ['estado', 'hora cierre']
-      ] = ['cerrada',(datetime.now()).strftime('%Y-%m-%d %H:%M:%S')]
+      ] = ['cerrada',ahora()]
 
 
   # mostrar df de cuenta
@@ -720,7 +758,7 @@ with tab5:
       )    
   
     # generar entregables de funcion de analisis
-    fig_pc,fig_ds,fig_h,fig_t,fig_hist,df_ingr = analisis_menu(
+    fig_pc,fig_ds,fig_h,fig_t,fig_hist,fig_hll,df_ingr = analisis_menu(
       df_ventas = st.session_state['dft'],
       df_menu = st.session_state['dfs']['tabla_menu'],
       df_ingredientes = st.session_state['dfs']['tabla_ingredientes'],
@@ -744,6 +782,9 @@ with tab5:
     with st.expander('Distribucion tiempo de cada mesa', expanded=False):
       st.plotly_chart(fig_hist)   
       
+    with st.expander('Distribucion llegadas por dia', expanded=False):
+      st.plotly_chart(fig_hll)   
+      
     with st.expander('Consumo acumulado de ingredientes', expanded=False):
       st.dataframe(df_ingr,hide_index=False)
 
@@ -756,7 +797,7 @@ with tab5:
 
 
 
-# !streamlit run App_Comanda_Restaurant3.py
+# !streamlit run App_Comanda_Restaurant4.py
 
 # para obtener TODOS los requerimientos de librerias que se usan
 # !pip freeze > requirements.txt
